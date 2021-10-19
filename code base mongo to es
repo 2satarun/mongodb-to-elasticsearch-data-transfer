@@ -1,0 +1,31 @@
+from mongoengine import connect
+from elasticsearch import Elasticsearch, client
+from mongoengine.document import Document
+from mongoengine.fields import DateField, DateTimeField, IntField, StringField
+
+connect(db="final", host="localhost", port=27017)          #connect to mongodb database=final
+es_client = Elasticsearch(host="localhost",port=9200)        #connect to elasticsearch
+class s_o_s(Document):                                       #collection of mongodb
+    timestamp = DateTimeField()
+    website = StringField()
+    segment = StringField()
+    total_count = IntField()
+    brand = StringField()
+    item_category = StringField()
+    count = IntField()
+    processor = StringField()
+
+
+for i in s_o_s.objects:                               #this loop for read all the values given below
+            
+    actions ={
+                    "timestamp" : i.timestamp,
+                    "website":i.website,
+                    "segment":i.segment,
+                    "total_count":i.total_count,
+                    "brand":i.brand,
+                    "item_category":i.item_category,
+                    "count":i.count,
+                    "processor":i.processor
+                    }
+    es_client.index(index="tarun", doc_type="doc", body=actions)           #one by one insert data in elasticsearch
