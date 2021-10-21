@@ -1,0 +1,88 @@
+from typing import Counter
+from mongoengine import connect
+from elasticsearch import Elasticsearch, client
+from mongoengine.document import Document
+from mongoengine.fields import DateField, DateTimeField, IntField, StringField
+from  json import dump
+from datetime import datetime
+from bson import json_util
+import json
+
+connect(db="final", host="localhost", port=27017)
+es_client = Elasticsearch(host="localhost",port=9200)
+counter = 0                  #start with 0
+bulk_limit = 5000                #this limit at one time 5000 data transfer
+class s_o_s(Document): 
+    timestamp = DateTimeField()
+    website = StringField()
+    segment = StringField()
+    total_count = IntField()
+    brand = StringField()
+    item_category = StringField()
+    count = IntField()
+    processor = StringField()
+
+body_string = ""
+for i in s_o_s.objects:
+            
+        actions ={
+                    "timestamp":str(i.timestamp),
+                    "website":i.website,
+                    "segment":i.segment,
+                    "total_count":i.total_count,
+                    "brand":i.brand,
+                    "item_category":i.item_category,
+                    "count":i.count,
+                    "processor":i.processor
+                    }
+       
+        st = json.dumps({"index": {"_index":"camp","_type":"sos"}}) 
+        st_value= json.dumps(actions, default=json_util.default)
+        single_string = st + '\n' + st_value + '\n'
+        body_string += single_string
+        counter = counter+1             #increased by one
+        if counter == bulk_limit:          # this stmt means counter is 5000 and bulk 5000
+                es_client.bulk(body_string)   #then dump bulk data
+                counter = 0
+                body_string = ""
+if body_string != "":
+    es_client.bulk(body_string)
+
+
+  
+
+class s_o_v(Document):
+    timestamp = DateTimeField()
+    website = StringField()
+    segment = StringField()
+    total_count = IntField()
+    brand = StringField()
+    item_category = StringField()
+    count = IntField()
+    processor = StringField()   
+
+body_string = "" 
+for j in s_o_v.objects:
+            
+        doc ={
+                    "timestamp":str(j.timestamp),
+                    "website":j.website,
+                    "segment":j.segment,
+                    "total_count":j.total_count,
+                    "brand":j.brand,
+                    "item_category":j.item_category,
+                    "count":j.count,
+                    "processor":j.processor
+                    }
+        st = json.dumps({"index": {"_index":"camp","_type":"sov"}}) 
+        st_value= json.dumps(doc, default=json_util.default)
+        single_string = st + '\n' + st_value + '\n'
+        body_string += single_string
+        counter = counter+1
+        if counter == bulk_limit:
+                es_client.bulk(body_string)
+                counter = 0
+                body_string = ""
+if body_string != "":
+    es_client.bulk(body_string)
+print ("done")
